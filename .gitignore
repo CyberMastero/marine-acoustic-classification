@@ -17,6 +17,7 @@ test_audio_clips/
 # Generated outputs
 static/outputs/
 static/*.png
+*.csv
 
 # Python cache
 __pycache__/
@@ -26,9 +27,13 @@ __pycache__/
 model/
 models/
 
+# Environment variables
+.env
+
 # OS / misc
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
+# IDE files
+.vscode/
+.idea/
