@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>{% block title %}Underwater AI{% endblock %}</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* ===== THEME ===== */
+:root {
+    --bg: linear-gradient(180deg, #0B132B, #020617);
+    --card: #1C2541;
+    --sidebar: #020617;
+    --text: #EAEAEA;
+    --accent: #00D4FF;
+}
+
+body.dark {
+    --bg: #020617;
+    --card: #0f172a;
+    --sidebar: #000814;
+    --text: #e2e8f0;
+    --accent: #3b82f6;
+}
+
+/* ===== GLOBAL ===== */
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: 0.3s;
+}
+
+p, h1, h2, h3, h4, h5, h6, span {
+    color: var(--text);
+}
+
+/* ===== LAYOUT ===== */
+.layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 260px;
+    min-height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    background: var(--sidebar);
+    padding: 20px;
+    border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar h2 {
+    color: var(--accent);
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px;
+    margin-bottom: 8px;
+    text-decoration: none;
+    color: #aaa;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar a.active,
+.sidebar a:hover {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent);
+}
+
+.system-status {
+    margin-top: 30px;
+    font-size: 13px;
+    color: #00ff88;
+}
+
+/* ===== CONTENT ===== */
+.content {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.page-title {
+    font-size: 22px;
+    color: var(--accent);
+}
+
+/* ===== BUTTON ===== */
+.toggle-btn {
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background: var(--accent);
+    color: white;
+}
+
+/* ===== RIGHT PANEL ===== */
+.right-panel {
+    background: var(--sidebar);
+    padding: 20px;
+    border-left: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ===== CARD ===== */
+.card {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 12px;
+    transition: 0.3s;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+    }
+    .right-panel {
+        display: none;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2>🌊 Underwater AI</h2>
+
+    <a href="/" class="{{ 'active' if request.path == '/' else '' }}">📊 Dashboard</a>
+    <a href="/analysis" class="{{ 'active' if request.path.startswith('/analysis') else '' }}">🎧 Analysis</a>
+    <a href="/insights" class="{{ 'active' if request.path.startswith('/insights') else '' }}">🧠 Insights</a>
+    <a href="/reports" class="{{ 'active' if request.path.startswith('/reports') else '' }}">📈 Reports</a>
+    <a href="/monitoring" class="{{ 'active' if request.path.startswith('/monitoring') else '' }}">📡 Monitoring</a>
+    <a href="/drift" class="{{ 'active' if request.path.startswith('/drift') else '' }}">📉 Drift</a>
+
+    <div class="system-status">● SYSTEM ONLINE</div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+    <div class="topbar">
+        <!-- ✅ FIXED -->
+        <h1 class="page-title">{{ self.title() }}</h1>
+        <button class="toggle-btn" onclick="toggleDark()">🌙 Mode</button>
+    </div>
+
+    {% block content %}{% endblock %}
+
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+
+<div class="card">
+<h3>📡 System</h3>
+<p>Model: CNN + MFCC</p>
+<p>Status: <span class="good">Running</span></p>
+</div>
+
+{% if monitoring %}
+<div class="card">
+<h3>🧠 Monitoring</h3>
+<p>Health:
+<span class="{{ 'good' if monitoring.health=='GOOD' else 'warn' if monitoring.health=='MODERATE' else 'bad' }}">
+{{ monitoring.health }}
+</span></p>
+
+<p>Marine: {{ monitoring.marine_percent }}%</p>
+<p>Stability: {{ monitoring.stability }}</p>
+</div>
+{% endif %}
+
+{% if drift %}
+<div class="card">
+<h3>📉 Drift</h3>
+<p>{{ drift.level }}</p>
+<p>Score: {{ drift.score }}</p>
+</div>
+{% endif %}
+
+{% if sos_level %}
+<div class="card">
+<h3>🚨 SOS Alert</h3>
+<p class="bad">{{ sos_level }}</p>
+<p>{{ sos_message }}</p>
+</div>
+{% endif %}
+
+</div>
+
+</div>
+
+<script>
+function toggleDark() {
+    document.body.classList.toggle("dark");
+    localStorage.setItem("theme",
+        document.body.classList.contains("dark") ? "dark" : "light"
+    );
+}
+
+window.onload = () => {
+    if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+    }
+};
+</script>
+
+</body>
+</html>

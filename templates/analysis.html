@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis{% endblock %}
+
+{% block content %}
+
+<style>
+.analysis-container {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+}
+
+.upload-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.upload-btn {
+    margin-top: 10px;
+    padding: 10px 18px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+}
+
+/* RESULT CARD */
+.result-card {
+    background: #fff;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.result-grid img {
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* INFO */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.info-box {
+    background: #f7f7f7;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.highlight {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* SOS COLORS */
+.sos-high { color: red; font-weight: bold; }
+.sos-mid { color: orange; }
+.sos-low { color: green; }
+
+/* LOADING */
+#loadingOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loader-box {
+    background: #fff;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 5px solid #ddd;
+    border-top: 5px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: auto;
+}
+
+@keyframes spin {
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<div class="analysis-container">
+
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay">
+        <div class="loader-box">
+            <div class="spinner"></div>
+            <p>Analyzing audio... Please wait</p>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <h1>Audio Analysis</h1>
+    <p>Upload underwater audio and analyze results</p>
+
+    <!-- UPLOAD -->
+    <div class="upload-card">
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="audio" multiple required>
+            <br>
+            <button class="upload-btn">Upload & Analyze</button>
+        </form>
+    </div>
+
+    <!-- RESULTS -->
+    {% if results %}
+
+        {% for r in results %}
+        <div class="result-card">
+
+            <h3>File: {{ r.file }}</h3>
+
+            <!-- AUDIO PLAYER -->
+            <audio controls style="width:100%; margin:10px 0;">
+                <source src="/audio/{{ r.file }}" type="audio/wav">
+            </audio>
+
+            <!-- VISUALS -->
+            <div class="result-grid">
+                <div>
+                    <h4>Waveform</h4>
+                    <img src="/{{ r.waveform }}">
+                </div>
+
+                <div>
+                    <h4>Spectrogram</h4>
+                    <img src="/{{ r.spectrogram }}">
+                </div>
+            </div>
+
+            <!-- PREDICTION -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div>Prediction</div>
+                    <div class="highlight">{{ r.prediction }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div>Confidence</div>
+                    <div class="highlight">{{ r.confidence }}%</div>
+                </div>
+
+                <div class="info-box">
+                    <div>Inference</div>
+                    <div class="highlight">{{ r.inference_time }} ms</div>
+                </div>
+            </div>
+
+            <!-- XAI -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div>Dominant Frequency</div>
+                    <div class="highlight">{{ r.dominant_freq }} Hz</div>
+                </div>
+
+                <div class="info-box">
+                    <div>Event Density</div>
+                    <div class="highlight">{{ r.event_density }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div>Energy</div>
+                    <div class="highlight">{{ r.energy_level }}</div>
+                </div>
+            </div>
+
+            <!-- DRIFT -->
+            <div class="info-grid">
+                <div class="info-box">
+                    <div>Drift Level</div>
+                    <div class="highlight">{{ r.drift_level }}</div>
+                </div>
+
+                <div class="info-box">
+                    <div>Drift Score</div>
+                    <div class="highlight">{{ r.drift_score }}</div>
+                </div>
+            </div>
+
+            <!-- SOS -->
+            <div class="info-box" style="margin-top:15px;">
+                <div>SOS Alert</div>
+
+                <div class="
+                    {% if r.sos_level == 'HIGH RISK' %}sos-high
+                    {% elif r.sos_level == 'MODERATE RISK' %}sos-mid
+                    {% else %}sos-low{% endif %}
+                ">
+                    {{ r.sos_level }} - {{ r.sos_message }}
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+
+    {% else %}
+        <p>No analysis yet. Upload a file.</p>
+    {% endif %}
+
+</div>
+
+<script>
+const form = document.querySelector("form");
+const overlay = document.getElementById("loadingOverlay");
+
+form.addEventListener("submit", () => {
+    overlay.style.display = "flex";
+});
+</script>
+
+{% endblock %}

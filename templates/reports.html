@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+
+<style>
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.section-title {
+    color: var(--accent);
+    font-size: 20px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 20px;
+}
+
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    transition: 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 20px rgba(0,212,255,0.2);
+}
+
+.big {
+    font-size: 28px;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.chart-box {
+    height: 300px;
+}
+
+.chart-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.insight-box {
+    background: rgba(0,212,255,0.08);
+    padding: 15px;
+    border-left: 4px solid var(--accent);
+    border-radius: 6px;
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+.alert-box {
+    background: rgba(255,0,0,0.15);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+button {
+    padding: 10px 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.empty {
+    opacity: 0.6;
+}
+
+</style>
+
+<h2 class="section-title">📊 System Analytics</h2>
+
+{% if total > 0 %}
+
+<!-- ================= METRICS ================= -->
+<div class="section">
+<div class="grid-3">
+
+<div class="card">
+<h4>Total Files</h4>
+<p class="big">{{ total }}</p>
+</div>
+
+<div class="card">
+<h4>Marine Sounds</h4>
+<p class="big">{{ marine }}</p>
+</div>
+
+<div class="card">
+<h4>Avg Confidence</h4>
+<p class="big">{{ (avg_conf * 100) | round(2) }}%</p>
+</div>
+
+</div>
+</div>
+
+<!-- ================= CHARTS ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h3 class="section-title">🌊 Marine vs Noise</h3>
+
+{% if marine or noise %}
+<div class="chart-box">
+<canvas id="pieChart"></canvas>
+</div>
+{% else %}
+<p class="empty">No distribution data</p>
+{% endif %}
+
+</div>
+
+<div class="card">
+<h3 class="section-title">📊 Event Trend</h3>
+
+{% if bar_labels and bar_values %}
+<div class="chart-box">
+<canvas id="barChart"></canvas>
+</div>
+{% else %}
+<p class="empty">No trend data available</p>
+{% endif %}
+
+</div>
+
+</div>
+</div>
+
+<!-- ================= INSIGHTS ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h3>🧠 Model Intelligence</h3>
+<div class="insight-box">
+• MFCC-based classification<br>
+• Spectral analysis identifies marine activity<br>
+• Energy peaks indicate biological signals
+</div>
+</div>
+
+<div class="card">
+<h3>📊 Data Insights</h3>
+<div class="insight-box">
+
+{% if marine > (total/2) %}
+<p class="good">✔ Marine signals dominate dataset</p>
+{% else %}
+<p class="warn">⚠ Noise influence detected</p>
+{% endif %}
+
+{% if total > 5 %}
+<p>✔ Dataset sufficient</p>
+{% else %}
+<p class="warn">⚠ Low data reliability</p>
+{% endif %}
+
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ================= RISK ================= -->
+<div class="section">
+<div class="card">
+
+<h3>🚨 System Risk Analysis</h3>
+
+{% if marine > total * 0.7 %}
+<p class="bad">HIGH RISK</p>
+<div class="alert-box">Unusual marine acoustic activity detected</div>
+
+{% elif marine > total * 0.4 %}
+<p class="warn">MODERATE RISK</p>
+<div class="alert-box">Elevated marine activity detected</div>
+
+{% else %}
+<p class="good">LOW RISK</p>
+<div class="alert-box">System stable</div>
+{% endif %}
+
+</div>
+</div>
+
+{% else %}
+
+<!-- EMPTY STATE -->
+<div class="card empty">
+<p>No analytics available yet. Upload audio to generate reports.</p>
+<a href="/analysis">
+<button>Go to Analysis</button>
+</a>
+</div>
+
+{% endif %}
+
+<!-- ================= CHART SCRIPT ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+Chart.defaults.color = "#EAEAEA";
+
+{% if total > 0 %}
+
+// PIE
+{% if marine or noise %}
+const pieCtx = document.getElementById("pieChart");
+if (pieCtx) {
+    new Chart(pieCtx, {
+        type: "doughnut",
+        data: {
+            labels: ["Marine", "Noise"],
+            datasets: [{
+                data: [{{ marine|default(0) }}, {{ noise|default(0) }}],
+                backgroundColor: ["#00D4FF", "#1C2541"]
+            }]
+        }
+    });
+}
+{% endif %}
+
+// BAR
+{% if bar_labels and bar_values %}
+const barCtx = document.getElementById("barChart");
+if (barCtx) {
+    new Chart(barCtx, {
+        type: "bar",
+        data: {
+            labels: {{ bar_labels | tojson }},
+            datasets: [{
+                label: "Events",
+                data: {{ bar_values | tojson }},
+                backgroundColor: "#00D4FF"
+            }]
+        }
+    });
+}
+{% endif %}
+
+{% endif %}
+</script>
+
+{% endblock %}

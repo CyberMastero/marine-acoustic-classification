@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.section-title {
+    color: var(--accent);
+    font-size: 20px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.big {
+    font-size: 30px;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+button {
+    padding: 10px 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+.empty {
+    opacity: 0.6;
+}
+
+</style>
+
+<h2 class="section-title">📊 Dashboard Overview</h2>
+
+{% if history %}
+
+<!-- ================= METRICS ================= -->
+<div class="section">
+<div class="grid-3">
+
+<div class="card">
+<h4>Total Analyses</h4>
+<p class="big">{{ history|length }}</p>
+</div>
+
+<div class="card">
+<h4>Marine Signals</h4>
+<p class="big">
+{{ history | selectattr('prediction', 'equalto', 'Marine Biological Sound') | list | length }}
+</p>
+</div>
+
+<div class="card">
+<h4>Avg Confidence</h4>
+<p class="big">
+{{ ((history | map(attribute='confidence') | sum / history|length) * 100) | round(2) }}%
+</p>
+</div>
+
+</div>
+</div>
+
+<!-- ================= STATUS ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h3>🧠 System Status</h3>
+
+{% if monitoring %}
+<p>
+Health:
+<span class="{{ 'good' if monitoring.health=='GOOD' else 'warn' if monitoring.health=='MODERATE' else 'bad' }}">
+{{ monitoring.health }}
+</span>
+</p>
+
+<p>Marine Activity: {{ monitoring.marine_percent }}%</p>
+<p>Stability: {{ monitoring.stability }}</p>
+{% else %}
+<p class="warn">No monitoring data</p>
+{% endif %}
+
+</div>
+
+<div class="card">
+<h3>📉 Drift Status</h3>
+
+{% if drift %}
+<p>
+Level:
+<span class="{{ 'good' if drift.level=='LOW' else 'warn' if drift.level=='MODERATE' else 'bad' }}">
+{{ drift.level }}
+</span>
+</p>
+
+<p>Score: {{ drift.score }}</p>
+{% else %}
+<p class="warn">No drift data</p>
+{% endif %}
+
+</div>
+
+</div>
+</div>
+
+<!-- ================= CHART ================= -->
+<div class="section">
+
+<h3 class="section-title">📈 Confidence Trend</h3>
+
+<div class="card">
+
+{% set labels = history | map(attribute='file') | list %}
+{% set values = history | map(attribute='confidence') | list %}
+
+{% if labels %}
+<canvas id="chart" height="100"></canvas>
+{% else %}
+<p class="empty">No chart data available</p>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- ================= QUICK ACTIONS ================= -->
+<div class="section">
+
+<h3 class="section-title">⚡ Quick Actions</h3>
+
+<div class="grid-3">
+
+<div class="card">
+<h4>🎧 Audio Analysis</h4>
+<p>Upload and analyze underwater audio</p>
+<a href="/analysis"><button>Open</button></a>
+</div>
+
+<div class="card">
+<h4>📈 Reports</h4>
+<p>View analytics and trends</p>
+<a href="/reports"><button>Open</button></a>
+</div>
+
+<div class="card">
+<h4>🧠 Insights</h4>
+<p>Explore AI explanations</p>
+<a href="/insights"><button>Open</button></a>
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= ALERT ================= -->
+{% if sos_level %}
+<div class="section">
+
+<div class="card">
+
+<h3>🚨 System Alert</h3>
+
+<p class="{{ 'bad' if sos_level=='HIGH RISK' else 'warn' if sos_level=='MODERATE RISK' else 'good' }}">
+{{ sos_level }}
+</p>
+
+<p>{{ sos_message }}</p>
+
+</div>
+
+</div>
+{% endif %}
+
+{% else %}
+
+<div class="card empty">
+<p>No data available yet. Start by analyzing audio.</p>
+<a href="/analysis"><button>Go to Analysis</button></a>
+</div>
+
+{% endif %}
+
+<!-- ================= CHART SCRIPT ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+Chart.defaults.color = "#EAEAEA";
+
+{% if history and labels %}
+const labels = {{ labels | tojson }};
+const data = {{ values | tojson }}.map(x => x * 100);
+
+const canvas = document.getElementById('chart');
+
+if (canvas) {
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Confidence %',
+                data: data,
+                borderColor: '#00D4FF',
+                fill: false
+            }]
+        }
+    });
+}
+{% endif %}
+</script>
+
+{% endblock %}

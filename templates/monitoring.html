@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring{% endblock %}
+
+{% block content %}
+
+<style>
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.big {
+    font-size: 26px;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+/* PROGRESS BAR */
+.progress {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    height: 10px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 10px;
+    border-radius: 8px;
+}
+
+/* ALERT */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* BUTTON */
+.btn {
+    padding: 10px 14px;
+    background: var(--accent);
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+</style>
+
+<h2>📡 System Monitoring</h2>
+
+{% if monitoring %}
+
+<!-- ================= HEALTH ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h3>🧠 System Health</h3>
+
+<p>
+Status:
+<span class="{{ 'good' if monitoring.health=='GOOD' else 'warn' if monitoring.health=='MODERATE' else 'bad' }}">
+{{ monitoring.health }}
+</span>
+</p>
+
+<!-- INTERPRETATION -->
+{% if monitoring.health == 'GOOD' %}
+<p class="good">✔ System operating optimally</p>
+{% elif monitoring.health == 'MODERATE' %}
+<p class="warn">⚠ Moderate activity — monitor closely</p>
+{% else %}
+<p class="bad">🚨 Low health — possible anomaly detected</p>
+{% endif %}
+
+<p>Marine Activity: {{ monitoring.marine_percent }}%</p>
+
+<div class="progress">
+<div class="progress-bar"
+style="width: {{ monitoring.marine_percent }}%;
+background: {% if monitoring.marine_percent > 60 %}#00ff88{% elif monitoring.marine_percent > 30 %}#ffcc00{% else %}#ff4d4d{% endif %};">
+</div>
+</div>
+
+<p>Stability: {{ monitoring.stability }}</p>
+
+</div>
+
+<!-- ================= DRIFT ================= -->
+<div class="card">
+<h3>📉 Drift Status</h3>
+
+<p>
+Level:
+<span class="{{ 'good' if drift.level=='LOW' else 'warn' if drift.level=='MODERATE' else 'bad' }}">
+{{ drift.level }}
+</span>
+</p>
+
+<p>Score: {{ drift.score }}</p>
+
+</div>
+
+</div>
+</div>
+
+<!-- ================= ALERTS ================= -->
+<div class="section">
+
+<div class="card">
+<h3>⚠ System Alerts</h3>
+
+{% if monitoring.alerts %}
+    {% for alert in monitoring.alerts %}
+        <div class="alert 
+        {% if '🚨' in alert %}bad{% else %}warn{% endif %}">
+            {{ alert }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="good">✔ No alerts — system stable</p>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- ================= SOS ================= -->
+{% if sos_level %}
+<div class="section">
+
+<div class="card">
+
+<h3>🚨 SOS Detection</h3>
+
+<p class="{{ 'bad' if sos_level=='HIGH RISK' else 'warn' if sos_level=='MODERATE RISK' else 'good' }}">
+{{ sos_level }}
+</p>
+
+<p>{{ sos_message }}</p>
+
+</div>
+
+</div>
+{% endif %}
+
+<!-- ================= ACTION ================= -->
+<div class="section">
+
+<div class="card">
+
+<h3>⚡ Actions</h3>
+
+<p>Analyze new data or monitor real-time signals.</p>
+
+<a href="/analysis" class="btn">Go to Analysis</a>
+<a href="/analysis#realtime" class="btn">🎤 Live Monitoring</a>
+
+</div>
+
+</div>
+
+{% else %}
+
+<!-- FALLBACK -->
+<div class="card">
+<p>No monitoring data available. Please analyze audio first.</p>
+<a href="/analysis" class="btn">Go to Analysis</a>
+</div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Insights{% endblock %}
+
+{% block content %}
+
+<style>
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.big {
+    font-size: 26px;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+.btn {
+    padding: 10px 14px;
+    background: var(--accent);
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+.empty {
+    opacity: 0.6;
+}
+
+</style>
+
+<h2>🧠 AI Insights</h2>
+
+{% if history %}
+
+<!-- ================= SUMMARY ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h4>Total Records</h4>
+<p class="big">{{ history|length }}</p>
+</div>
+
+<div class="card">
+<h4>Avg Confidence</h4>
+<p class="big">
+{{ (history | map(attribute='confidence') | sum / history|length * 100) | round(2) }}%
+</p>
+</div>
+
+</div>
+</div>
+
+<!-- ================= DISTRIBUTION ================= -->
+<div class="section">
+<div class="grid-2">
+
+<div class="card">
+<h4>Prediction Distribution</h4>
+
+{% set marine = history | selectattr('prediction','equalto','Marine Biological Sound') | list | length %}
+{% set noise = history|length - marine %}
+
+<p>Marine: {{ marine }}</p>
+<p>Noise: {{ noise }}</p>
+
+{% if marine > (history|length / 2) %}
+<p class="good">✔ Marine activity dominant</p>
+{% else %}
+<p class="warn">⚠ Noise dominant</p>
+{% endif %}
+
+</div>
+
+<div class="card">
+<h4>Model Behavior</h4>
+
+{% set avg_conf = (history | map(attribute='confidence') | sum / history|length) %}
+
+<p>Avg Confidence: {{ (avg_conf*100)|round(2) }}%</p>
+
+{% if avg_conf > 0.7 %}
+<p class="good">✔ Model performing well</p>
+{% elif avg_conf > 0.4 %}
+<p class="warn">⚠ Moderate confidence</p>
+{% else %}
+<p class="bad">❌ Model unreliable</p>
+{% endif %}
+
+</div>
+
+</div>
+</div>
+
+<!-- ================= DRIFT ================= -->
+<div class="section">
+
+<div class="card">
+<h4>📉 Drift Analysis</h4>
+
+{% if drift %}
+<p>Level:
+<span class="{{ 'good' if drift.level=='LOW' else 'warn' if drift.level=='MODERATE' else 'bad' }}">
+{{ drift.level }}
+</span>
+</p>
+
+<p>Score: {{ drift.score }}</p>
+{% else %}
+<p class="empty">No drift data</p>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- ================= SOS ================= -->
+{% if sos_level %}
+<div class="section">
+
+<div class="card">
+
+<h4>🚨 SOS Alert</h4>
+
+<p class="{{ 'bad' if sos_level=='HIGH RISK' else 'warn' if sos_level=='MODERATE RISK' else 'good' }}">
+{{ sos_level }}
+</p>
+
+<p>{{ sos_message }}</p>
+
+</div>
+
+</div>
+{% endif %}
+
+<!-- ================= CHART ================= -->
+<div class="section">
+
+<div class="card">
+<h4>📊 Confidence Trend</h4>
+
+{% set labels = history | map(attribute='file') | list %}
+{% set values = history | map(attribute='confidence') | list %}
+
+{% if labels %}
+<canvas id="confidenceChart" height="100"></canvas>
+{% else %}
+<p class="empty">No chart data</p>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- ================= HISTORY ================= -->
+<div class="section">
+
+<div class="card">
+<h4>Recent Predictions</h4>
+
+<ul>
+{% for item in history[-10:] %}
+<li>
+{{ item.prediction }} - {{ (item.confidence*100)|round(2) }}%
+</li>
+{% endfor %}
+</ul>
+
+</div>
+
+</div>
+
+<!-- ================= ACTION ================= -->
+<div class="section">
+
+<div class="card">
+<h4>⚡ Action</h4>
+
+<p>Upload more data or use live analysis to improve model understanding.</p>
+
+<a href="/analysis" class="btn">Go to Analysis</a>
+<a href="/analysis#realtime" class="btn">🎤 Live AI</a>
+
+</div>
+
+</div>
+
+{% else %}
+
+<div class="card">
+<p>No insights available. Upload data first.</p>
+<a href="/analysis" class="btn">Go to Analysis</a>
+</div>
+
+{% endif %}
+
+<!-- ================= CHART SCRIPT ================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+Chart.defaults.color = "#EAEAEA";
+
+{% if history and labels %}
+const ctx = document.getElementById("confidenceChart");
+
+if (ctx) {
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: {{ labels | tojson }},
+            datasets: [{
+                label: "Confidence %",
+                data: {{ values | tojson }}.map(x => x * 100),
+                borderColor: "#00D4FF",
+                fill: false
+            }]
+        }
+    });
+}
+{% endif %}
+</script>
+
+{% endblock %}

@@ -1,0 +1,34 @@
+# Virtual environment
+.venv/
+env/
+venv/
+
+# Data & uploads
+data/
+logs/
+uploads/
+test_audio_clips/
+
+# Audio & database files
+*.wav
+*.mp3
+*.db
+
+# Generated outputs
+static/outputs/
+static/*.png
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Models
+model/
+models/
+
+# OS / misc
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env

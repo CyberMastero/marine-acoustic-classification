@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Drift Analysis{% endblock %}
+
+{% block content %}
+
+<style>
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.big {
+    font-size: 28px;
+    color: var(--accent);
+    font-weight: bold;
+}
+
+.good { color: #00ff88; }
+.warn { color: #ffcc00; }
+.bad { color: #ff4d4d; }
+
+/* PROGRESS BAR */
+.progress {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    height: 10px;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 10px;
+    border-radius: 8px;
+}
+
+/* ALERT BOX */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* BUTTON */
+.btn {
+    padding: 10px 14px;
+    background: var(--accent);
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+</style>
+
+<h2>📉 Drift Analysis</h2>
+
+{% if level and score is not none %}
+
+<!-- ================= MAIN DRIFT ================= -->
+<div class="section">
+
+<div class="card">
+
+<h3>📊 Drift Status</h3>
+
+<p>
+Level:
+<span class="{{ 'good' if level=='LOW' else 'warn' if level=='MODERATE' else 'bad' }}">
+{{ level }}
+</span>
+</p>
+
+<p>Score: {{ score }}</p>
+
+<!-- PROGRESS BAR (SAFE) -->
+<div class="progress">
+<div class="progress-bar"
+style="width: {{ score if score < 100 else 100 }}%;
+background: {% if score < 20 %}#00ff88{% elif score < 50 %}#ffcc00{% else %}#ff4d4d{% endif %};">
+</div>
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= INTERPRETATION ================= -->
+<div class="section">
+
+<div class="grid-2">
+
+<div class="card">
+<h3>🧠 Interpretation</h3>
+
+{% if level == 'LOW' %}
+<p class="good">✔ Model behavior consistent with past data</p>
+<p>No significant distribution shift detected.</p>
+
+{% elif level == 'MODERATE' %}
+<p class="warn">⚠ Moderate drift detected</p>
+<p>Model inputs are changing — monitor closely.</p>
+
+{% else %}
+<p class="bad">🚨 High drift detected</p>
+<p>Model may be unreliable — retraining recommended.</p>
+{% endif %}
+
+<!-- PROJECT-SPECIFIC EXPLANATION -->
+<p style="margin-top:10px;">
+Drift is calculated using distance between current and historical MFCC feature vectors.
+</p>
+
+<p class="warn">⚠ Drift accuracy depends on sufficient historical data.</p>
+
+</div>
+
+<div class="card">
+<h3>📊 Impact on System</h3>
+
+{% if level == 'LOW' %}
+<p>✔ Predictions are stable</p>
+<p>✔ Confidence reliable</p>
+
+{% elif level == 'MODERATE' %}
+<p>⚠ Predictions may fluctuate</p>
+<p>⚠ Confidence variability increasing</p>
+
+{% else %}
+<p class="bad">🚨 Predictions unreliable</p>
+<p class="bad">🚨 Confidence not trustworthy</p>
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= RISK ================= -->
+<div class="section">
+
+<div class="card">
+
+<h3>🚨 Drift Risk Level</h3>
+
+{% if score < 20 %}
+<p class="good">LOW RISK</p>
+<div class="alert good">System operating normally</div>
+
+{% elif score < 50 %}
+<p class="warn">MODERATE RISK</p>
+<div class="alert warn">Input distribution changing</div>
+
+{% else %}
+<p class="bad">HIGH RISK</p>
+<div class="alert bad">Model retraining recommended</div>
+{% endif %}
+
+</div>
+
+</div>
+
+<!-- ================= ACTION ================= -->
+<div class="section">
+
+<div class="card">
+
+<h3>⚡ Recommended Actions</h3>
+
+{% if level == 'LOW' %}
+<p>✔ Continue monitoring system</p>
+
+{% elif level == 'MODERATE' %}
+<p>⚠ Collect more data for validation</p>
+<p>⚠ Monitor confidence fluctuations</p>
+
+{% else %}
+<p class="bad">🚨 Retrain model with new data</p>
+<p class="bad">🚨 Validate feature extraction</p>
+{% endif %}
+
+<a href="/analysis" class="btn">Analyze New Data</a>
+<a href="/analysis#realtime" class="btn">🎤 Live Monitoring</a>
+<a href="/monitoring" class="btn">View System Health</a>
+
+</div>
+
+</div>
+
+{% else %}
+
+<!-- ================= FALLBACK ================= -->
+<div class="card">
+<p>No drift data available. Please analyze audio first.</p>
+<a href="/analysis" class="btn">Go to Analysis</a>
+</div>
+
+{% endif %}
+
+{% endblock %}
